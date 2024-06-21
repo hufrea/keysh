@@ -1,0 +1,19 @@
+<resources>
+    <string name="app_name">Keysh</string>
+
+    <string name="action_exit">Exit</string>
+    <string name="action_save">Save</string>
+    <string name="action_settings">Settings</string>
+
+    <string name="settings_textsize">Text size</string>
+    <string name="settings_path">Script path</string>
+
+    <!-- Strings used for fragments for navigation -->
+    <string name="code_fragment_label">Code</string>
+    <string name="settings_fragment_label">Settings</string>
+
+    <!-- Profile Preferences -->
+    <string name="main_header">Main</string>
+
+    <string name="accessibility_desc">Handle key events</string>
+</resources>

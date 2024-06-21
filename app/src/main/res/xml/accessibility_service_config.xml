@@ -1,0 +1,9 @@
+<accessibility-service
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes=""
+    android:accessibilityFlags="flagRequestFilterKeyEvents"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:description="@string/accessibility_desc"
+    android:canRetrieveWindowContent="false"
+    android:canRequestFilterKeyEvents="true"
+    />
