@@ -23,6 +23,7 @@ import android.media.VolumeProvider;
 import android.media.session.MediaSession;
 import android.media.session.PlaybackState;
 
+import android.os.PowerManager;
 import android.util.Log;
 
 import androidx.core.app.NotificationCompat;
@@ -39,6 +40,7 @@ public class ServiceMediaSession extends Service {
     private MediaRouter.SimpleCallback mCallback;
     private ActionAudio volumeControl;
     private HandlerButton buttonHandler = null;
+    private PowerManager.WakeLock wl;
 
 
     @Override
@@ -121,10 +123,16 @@ public class ServiceMediaSession extends Service {
                     @Override
                     public void onAdjustVolume(int direction) {
                         Log.d(TAG, "onAdjustVolume " + direction);
-                        if (direction != 0)
+
+                        if (direction != 0) {
+                            wl.acquire(60 * 1000L);
                             buttonHandler.onButtonPress(direction);
-                        else
+                        } else {
+                            if (wl.isHeld()) {
+                                wl.release();
+                            }
                             buttonHandler.onButtonRelease();
+                        }
                     }
                 };
         mediaSession.setPlaybackToRemote(buttonProvider);
@@ -169,6 +177,9 @@ public class ServiceMediaSession extends Service {
         AudioManager am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         this.volumeControl = new ActionAudio(am);
         this.buttonHandler = new HandlerButton(this, "MediaService", volumeControl);
+
+        PowerManager pm = (PowerManager) this.getSystemService(Context.POWER_SERVICE);
+        this.wl = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, TAG + ":lock");
 
         initMediaSession();
         initMediaRouter();

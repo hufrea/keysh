@@ -236,5 +236,4 @@ intent() {
 }
 
 
-echo "stop_access"
 loop
