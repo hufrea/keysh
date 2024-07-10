@@ -1,5 +1,3 @@
-#!/system/bin/sh
-
 set -eu
 
 STO=250
@@ -14,7 +12,6 @@ LTO=500
 #                      -> Down      = forward
 #                      -> Dw 250ms  = break
 
-# ! Requires SYSTEM_ALERT_WINDOW permission
 # Up 500ms -> (loop 5s)
 #             Up        = min += 5
 #             Down      = min += 1 (-1 if before 5)
@@ -165,6 +162,8 @@ on_key() {
 
 
 loop() {
+    permission BACKGROUND_ACTIVITY
+
     while read key; do
         wakelock acquire $WL_MAX
         on_key "$key"
@@ -233,6 +232,11 @@ intent() {
         ARGS="${ARGS}${DELIM}${arg}"
     done
     echo ":${DELIM}:intent${ARGS}";
+}
+permission() {
+    # BACKGROUND_ACTIVITY
+    # STORAGE|TERMUX_RUN_COMMAND
+    echo "permission $*";
 }
 
 

@@ -2,9 +2,8 @@ set -eu
 
 TO=0.300
 DUR_S=30
-TIME=300
 
-# UP 300ms = start timer for 300s
+# UP 300ms = run command in Termux
 
 
 on_up() {
@@ -13,12 +12,12 @@ on_up() {
         return
     }
     vibrate $DUR_S
-    set-timer $TIME
+    termux-run bash -c 'top -n 5'
 }
 
 
 loop() {
-    permission BACKGROUND_ACTIVITY
+    permission TERMUX_RUN_COMMAND
     
     while read key; do
         wakelock acquire 5000
@@ -36,13 +35,21 @@ loop() {
 }
 
 
-set-timer() {
-    MSG=$(date +%H:%M:%S)
-    intent -a 'android.intent.action.SET_TIMER' \
-        -t 'activity' \
-        -e "android.intent.extra.alarm.MESSAGE:${MSG}" \
-        -e "android.intent.extra.alarm.LENGTH:${1}" \
-        -e "android.intent.extra.alarm.SKIP_UI:true"
+termux-run() {
+    BIN="/data/data/com.termux/files/usr/bin/${1}"
+    ARGS=":+-+:${2}"
+    shift; shift
+
+    for arg in "$@"; do
+        ARGS="${ARGS}+-+${arg}"
+    done
+
+    intent -a 'com.termux.RUN_COMMAND' \
+        -t 'service' \
+        -p 'com.termux/com.termux.app.RunCommandService' \
+        -e "com.termux.RUN_COMMAND_PATH:${BIN}" \
+        -e "com.termux.RUN_COMMAND_BACKGROUND:false" \
+        -e "com.termux.RUN_COMMAND_ARGUMENTS:{${ARGS}}"
 }
 
 ###

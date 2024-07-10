@@ -90,5 +90,11 @@ intent() {
     done
     echo ":${DELIM}:intent${ARGS}";
 }
+permission() {
+    # BACKGROUND_ACTIVITY
+    # STORAGE|TERMUX_RUN_COMMAND
+    echo "permission $*";
+}
+
 
 loop

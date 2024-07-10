@@ -15,5 +15,7 @@
     <!-- Profile Preferences -->
     <string name="main_header">Main</string>
 
-    <string name="accessibility_desc">Handle key events</string>
+    <string name="accessibility_events">Handle key events when screen is on</string>
+    <string name="background">Background</string>
+    <string name="window_perm_req">Find the app and give it permission</string>
 </resources>

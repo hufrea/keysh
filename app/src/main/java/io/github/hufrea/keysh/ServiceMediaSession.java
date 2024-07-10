@@ -128,10 +128,10 @@ public class ServiceMediaSession extends Service {
                             wl.acquire(60 * 1000L);
                             buttonHandler.onButtonPress(direction);
                         } else {
+                            buttonHandler.onButtonRelease();
                             if (wl.isHeld()) {
                                 wl.release();
                             }
-                            buttonHandler.onButtonRelease();
                         }
                     }
                 };

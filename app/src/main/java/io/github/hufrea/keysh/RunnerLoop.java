@@ -96,7 +96,22 @@ public class RunnerLoop {
                 try {
                     ActionIntent.sendIntent(context, args);
                 } catch (Exception e) {
+                    Log.e(TAG, e.toString());
                     ActionNotify.notifyerror(context, e.toString(), 0);
+                }
+                break;
+
+            case "permission":
+                if (args.length < 2 ||
+                        !context.getClass().equals(ActivityMain.class)) {
+                    break;
+                }
+                Intent pintent = new Intent(context, ActivityPermission.class);
+                pintent.putExtra("permission", args[1]);
+                try {
+                    context.startActivity(pintent);
+                } catch (Exception e) {
+                    Log.e(TAG, e.toString());
                 }
                 break;
 
