@@ -88,6 +88,20 @@ public class ActionAudio {
             case "call":
                 key = AudioManager.STREAM_VOICE_CALL;
                 break;
+            case "current":
+                switch (am.getMode()) {
+                    case AudioManager.MODE_NORMAL:
+                        key = AudioManager.STREAM_MUSIC;
+                        break;
+                    case AudioManager.MODE_RINGTONE:
+                        key = AudioManager.STREAM_RING;
+                        break;
+                    case AudioManager.MODE_IN_CALL:
+                    default:
+                        key = AudioManager.STREAM_VOICE_CALL;
+                        break;
+                }
+                break;
             default:
                 return;
         }

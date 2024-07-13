@@ -61,7 +61,7 @@ media() {
     echo "media $*";
 }
 volume() {
-    # music|notification|ring|call up|down|<level>
+    # music|notification|ring|call|current up|down|<level>
     echo "volume $*";
 }
 torch() {
