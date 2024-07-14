@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 
+import android.media.AudioPlaybackConfiguration;
 import android.media.MediaRouter;
 import android.os.Build;
 import android.os.Bundle;
@@ -28,6 +29,8 @@ import android.util.Log;
 
 import androidx.core.app.NotificationCompat;
 
+import java.util.List;
+
 import io.github.hufrea.keysh.R;
 import io.github.hufrea.keysh.actions.ActionAudio;
 
@@ -37,10 +40,48 @@ public class ServiceMediaSession extends Service {
 
     private MediaSession mediaSession = null;
     private BroadcastReceiver receiver;
-    private MediaRouter.SimpleCallback mCallback;
     private ActionAudio volumeControl;
     private HandlerButton buttonHandler = null;
     private PowerManager.WakeLock wl;
+    private AudioManager am;
+
+    private final AudioManager.AudioPlaybackCallback audioPlaybackCallback =
+            new AudioManager.AudioPlaybackCallback() {
+                @Override
+                public void onPlaybackConfigChanged(List<AudioPlaybackConfiguration> configs) {
+                    super.onPlaybackConfigChanged(configs);
+                    if (configs.isEmpty()) {
+                        return;
+                    }
+                    Log.d(TAG, "onPlaybackConfigChanged: " + configs.get(0).getAudioAttributes().toString());
+                    mediaSessionToTop();
+                }
+            };
+
+    private final MediaRouter.SimpleCallback mCallback = new MediaRouter.SimpleCallback() {
+        @Override
+        public void onRouteSelected(MediaRouter router, int type, MediaRouter.RouteInfo info) {
+            Log.d(TAG, "onRouteSelected");
+            volumeControl.updateVolumeLevels();
+        }
+
+        @Override
+        public void onRouteVolumeChanged(MediaRouter router, MediaRouter.RouteInfo info) {
+            int current_volume = info.getVolume();
+            int type = info.getPlaybackStream();
+            int fixed_volume = volumeControl.getFixedVolume(type);
+
+            if (fixed_volume == -1
+                    || fixed_volume == current_volume) {
+                Log.d(TAG, "onRouteVolumeChanged ignore: " + current_volume + " : " + fixed_volume);
+                return;
+            }
+            mediaSessionToTop();
+            am.setStreamVolume(type, fixed_volume, 0);
+            Log.d(TAG, "onRouteVolumeChanged: " + current_volume + " : " + fixed_volume);
+            buttonHandler.onButtonPress(current_volume < fixed_volume ? -1 : 1);
+        }
+    };
 
 
     @Override
@@ -80,35 +121,6 @@ public class ServiceMediaSession extends Service {
 
         // restore after lmk
         startForegroundService(new Intent(this, ServiceMediaSession.class));
-    }
-
-
-    private void initMediaRouter () {
-        AudioManager am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-        this.mCallback = new MediaRouter.SimpleCallback() {
-            @Override
-            public void onRouteSelected(MediaRouter router, int type, MediaRouter.RouteInfo info) {
-                Log.d(TAG, "onRouteSelected");
-                volumeControl.updateVolumeLevels();
-            }
-
-            @Override
-            public void onRouteVolumeChanged(MediaRouter router, MediaRouter.RouteInfo info) {
-                int current_volume = info.getVolume();
-                int type = info.getPlaybackStream();
-                int fixed_volume = volumeControl.getFixedVolume(type);
-
-                if (fixed_volume == -1
-                        || fixed_volume == current_volume) {
-                    Log.d(TAG, "onRouteVolumeChanged ignore: " + current_volume + " : " + fixed_volume);
-                    return;
-                }
-                mediaSessionToTop();
-                am.setStreamVolume(type, fixed_volume, 0);
-                Log.d(TAG, "onRouteVolumeChanged: " + current_volume + " : " + fixed_volume);
-                buttonHandler.onButtonPress(current_volume < fixed_volume ? -1 : 1);
-            }
-        };
     }
 
 
@@ -160,9 +172,12 @@ public class ServiceMediaSession extends Service {
 
                     mediaRouter.addCallback(MediaRouter.CALLBACK_FLAG_UNFILTERED_EVENTS,
                             mCallback, MediaRouter.CALLBACK_FLAG_UNFILTERED_EVENTS);
+                    am.registerAudioPlaybackCallback(audioPlaybackCallback, null);
                 } else if (action.equals(Intent.ACTION_SCREEN_ON)) {
                     mediaSession.setActive(false);
+
                     mediaRouter.removeCallback(mCallback);
+                    am.unregisterAudioPlaybackCallback(audioPlaybackCallback);
                 }
             }
         };
@@ -174,7 +189,7 @@ public class ServiceMediaSession extends Service {
 
 
     private void setup() {
-        AudioManager am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        this.am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         this.volumeControl = new ActionAudio(am);
         this.buttonHandler = new HandlerButton(this, "MediaService", volumeControl);
 
@@ -182,7 +197,6 @@ public class ServiceMediaSession extends Service {
         this.wl = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, TAG + ":lock");
 
         initMediaSession();
-        initMediaRouter();
         initReceiver();
     }
 
