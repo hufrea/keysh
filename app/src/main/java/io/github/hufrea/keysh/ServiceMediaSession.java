@@ -32,7 +32,6 @@ import androidx.core.app.NotificationCompat;
 import java.util.List;
 
 import io.github.hufrea.keysh.R;
-import io.github.hufrea.keysh.actions.ActionAudio;
 
 
 public class ServiceMediaSession extends Service {
@@ -40,7 +39,6 @@ public class ServiceMediaSession extends Service {
 
     private MediaSession mediaSession = null;
     private BroadcastReceiver receiver;
-    private ActionAudio volumeControl;
     private HandlerButton buttonHandler = null;
     private PowerManager.WakeLock wl;
     private AudioManager am;
@@ -62,24 +60,15 @@ public class ServiceMediaSession extends Service {
         @Override
         public void onRouteSelected(MediaRouter router, int type, MediaRouter.RouteInfo info) {
             Log.d(TAG, "onRouteSelected");
-            volumeControl.updateVolumeLevels();
         }
 
         @Override
         public void onRouteVolumeChanged(MediaRouter router, MediaRouter.RouteInfo info) {
             int current_volume = info.getVolume();
             int type = info.getPlaybackStream();
-            int fixed_volume = volumeControl.getFixedVolume(type);
 
-            if (fixed_volume == -1
-                    || fixed_volume == current_volume) {
-                Log.d(TAG, "onRouteVolumeChanged ignore: " + current_volume + " : " + fixed_volume);
-                return;
-            }
             mediaSessionToTop();
-            am.setStreamVolume(type, fixed_volume, 0);
-            Log.d(TAG, "onRouteVolumeChanged: " + current_volume + " : " + fixed_volume);
-            buttonHandler.onButtonPress(current_volume < fixed_volume ? -1 : 1);
+            Log.d(TAG, "onRouteVolumeChanged: " + current_volume);
         }
     };
 
@@ -138,6 +127,7 @@ public class ServiceMediaSession extends Service {
 
                         if (direction != 0) {
                             wl.acquire(60 * 1000L);
+                            Log.d(TAG, "wakelock acquire");
                             buttonHandler.onButtonPress(direction);
                         } else {
                             buttonHandler.onButtonRelease();
@@ -168,7 +158,6 @@ public class ServiceMediaSession extends Service {
                 if (action.equals(Intent.ACTION_SCREEN_OFF)) {
                     mediaSession.setActive(true);
                     mediaSessionToTop();
-                    volumeControl.updateVolumeLevels();
 
                     mediaRouter.addCallback(MediaRouter.CALLBACK_FLAG_UNFILTERED_EVENTS,
                             mCallback, MediaRouter.CALLBACK_FLAG_UNFILTERED_EVENTS);
@@ -190,8 +179,7 @@ public class ServiceMediaSession extends Service {
 
     private void setup() {
         this.am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-        this.volumeControl = new ActionAudio(am);
-        this.buttonHandler = new HandlerButton(this, "MediaService", volumeControl);
+        this.buttonHandler = new HandlerButton(this, "MediaService");
 
         PowerManager pm = (PowerManager) this.getSystemService(Context.POWER_SERVICE);
         this.wl = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, TAG + ":lock");
@@ -230,7 +218,7 @@ public class ServiceMediaSession extends Service {
         if (buttonHandler != null) {
             buttonHandler.deinit();
         }
-        this.buttonHandler = new HandlerButton(this, data, volumeControl);
+        this.buttonHandler = new HandlerButton(this, data);
         return START_STICKY;
     }
 

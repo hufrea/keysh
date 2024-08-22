@@ -6,7 +6,6 @@ import android.util.Log;
 
 import androidx.preference.PreferenceManager;
 
-import io.github.hufrea.keysh.actions.ActionAudio;
 import io.github.hufrea.keysh.actions.ActionNotify;
 
 import java.nio.charset.StandardCharsets;
@@ -22,7 +21,7 @@ public class HandlerButton {
     private static final String VERSION = "1";
 
     private long press_time = 0;
-    private int direction = 1;
+    private int direction = 0;
 
     final private Context context;
 
@@ -51,7 +50,7 @@ public class HandlerButton {
         return builder.start();
     }
 
-    public HandlerButton(Context context, String var, ActionAudio volumeControl) {
+    public HandlerButton(Context context, String var) {
         this.context = context;
         try {
             this.process = initShell(var);
@@ -62,7 +61,7 @@ public class HandlerButton {
         this.stdin = process.getOutputStream(); // NullPoint?
         InputStream stdout = process.getInputStream();
 
-        this.runner = new RunnerLoop(context, volumeControl);
+        this.runner = new RunnerLoop(context);
         runner.start(stdout);
     }
 

@@ -5,69 +5,45 @@ import android.util.SparseArray;
 import android.view.KeyEvent;
 
 public class ActionAudio {
-    final private AudioManager am;
-    final private static SparseArray<Integer> volumeMap = new SparseArray<>();
-    static {
-        volumeMap.put(AudioManager.STREAM_MUSIC, 0);
-        volumeMap.put(AudioManager.STREAM_NOTIFICATION, 0);
-        volumeMap.put(AudioManager.STREAM_RING, 0);
-        volumeMap.put(AudioManager.STREAM_ALARM, 0);
-        volumeMap.put(AudioManager.STREAM_VOICE_CALL, 0);
-    }
 
-    public ActionAudio(AudioManager am) {
-        this.am = am;
-    }
-
-    public int getFixedVolume(int type) {
-        return volumeMap.get(type);
-    }
-
-    public void updateVolumeLevels() {
-        for (int i = 0; i < volumeMap.size(); i++) {
-            int key = volumeMap.keyAt(i);
-            volumeMap.set(key, am.getStreamVolume(key));
-        }
-    }
-
-    public void pressMediaButton(int code) {
+    public static void pressMediaButton(AudioManager am, int code) {
         am.dispatchMediaKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, code));
         am.dispatchMediaKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, code));
     }
 
-    public void mediaEvent(String[] args) {
+    public static void mediaEvent(AudioManager am, String[] args) {
         if (args.length < 2) {
             return;
         }
         switch (args[1]) {
             case "play":
-                pressMediaButton(KeyEvent.KEYCODE_MEDIA_PLAY);
+                pressMediaButton(am, KeyEvent.KEYCODE_MEDIA_PLAY);
                 break;
             case "pause":
-                pressMediaButton(KeyEvent.KEYCODE_MEDIA_PAUSE);
+                pressMediaButton(am, KeyEvent.KEYCODE_MEDIA_PAUSE);
                 break;
             case "play_pause":
-                pressMediaButton(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE);
+                pressMediaButton(am, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE);
                 break;
             case "next":
-                pressMediaButton(KeyEvent.KEYCODE_MEDIA_NEXT);
+                pressMediaButton(am, KeyEvent.KEYCODE_MEDIA_NEXT);
                 break;
             case "previous":
-                pressMediaButton(KeyEvent.KEYCODE_MEDIA_PREVIOUS);
+                pressMediaButton(am, KeyEvent.KEYCODE_MEDIA_PREVIOUS);
                 break;
             case "rewind":
-                pressMediaButton(KeyEvent.KEYCODE_MEDIA_REWIND);
+                pressMediaButton(am, KeyEvent.KEYCODE_MEDIA_REWIND);
                 break;
             case "forward":
-                pressMediaButton(KeyEvent.KEYCODE_MEDIA_FAST_FORWARD);
+                pressMediaButton(am, KeyEvent.KEYCODE_MEDIA_FAST_FORWARD);
                 break;
             case "stop":
-                pressMediaButton(KeyEvent.KEYCODE_MEDIA_STOP);
+                pressMediaButton(am, KeyEvent.KEYCODE_MEDIA_STOP);
                 break;
         }
     }
 
-    public void volumeSet(String[] args) {
+    public static void volumeSet(AudioManager am, String[] args) {
         if (args.length < 3) {
             return;
         }
@@ -120,7 +96,6 @@ public class ActionAudio {
                     return;
                 }
         }
-        volumeMap.set(key, current);
         am.setStreamVolume(key, current, AudioManager.FLAG_SHOW_UI);
     }
 }

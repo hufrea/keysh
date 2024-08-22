@@ -21,22 +21,16 @@ public class RunnerLoop {
     private static final int DEFAULT_VIBRATE = 50;
 
     private final Context context;
-    final private ActionAudio actionAudio;
+    final private AudioManager am;
     final private PowerManager pm;
     private PowerManager.WakeLock wl = null;
 
     private Thread thread = null;
 
-    public RunnerLoop(Context context, ActionAudio audio) {
+    public RunnerLoop(Context context) {
         this.context = context;
         this.pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
-
-        if (audio == null) {
-            this.actionAudio = new ActionAudio(context.getSystemService(AudioManager.class));
-        }
-        else {
-            this.actionAudio = audio;
-        }
+        this.am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
     }
 
     private int toInt(String str, int def) {
@@ -60,10 +54,10 @@ public class RunnerLoop {
         String[] args = line.split(delimiter);
         switch (args[0]) {
             case "media":
-                actionAudio.mediaEvent(args);
+                ActionAudio.mediaEvent(am, args);
                 break;
             case "volume":
-                actionAudio.volumeSet(args);
+                ActionAudio.volumeSet(am, args);
                 break;
             case "torch":
                 if (args.length < 2) {

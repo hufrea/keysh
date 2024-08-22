@@ -25,7 +25,7 @@ public class ActivityMain extends AppCompatActivity {
 
     public void restartBH() {
         this.buttonHandler.deinit();
-        this.buttonHandler = new HandlerButton(this, "MainActivity", null);
+        this.buttonHandler = new HandlerButton(this, "MainActivity");
 
         stopService(new Intent(this, ServiceMediaSession.class));
         startService(new Intent(this, ServiceMediaSession.class));
@@ -66,7 +66,7 @@ public class ActivityMain extends AppCompatActivity {
         } else {
             startService(intent);
         }
-        buttonHandler = new HandlerButton(this, "MainActivity", null);
+        buttonHandler = new HandlerButton(this, "MainActivity");
     }
 
     @Override

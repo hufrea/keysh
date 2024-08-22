@@ -55,7 +55,7 @@ public class ServiceAccessibility extends AccessibilityService {
         String ACTION_STOP = getPackageName() + ".STOP";
 
         Log.d("ServiceAccessibility", "onServiceConnected");
-        this.buttonHandler = new HandlerButton(this, "AccessibilityService", null);
+        this.buttonHandler = new HandlerButton(this, "AccessibilityService");
         this.receiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -74,7 +74,7 @@ public class ServiceAccessibility extends AccessibilityService {
                         data = object.toString();
                     }
                 }
-                buttonHandler = new HandlerButton(context, data, null);
+                buttonHandler = new HandlerButton(context, data);
                 stopped = false;
             }
         };
