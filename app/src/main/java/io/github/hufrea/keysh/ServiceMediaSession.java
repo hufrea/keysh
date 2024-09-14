@@ -10,6 +10,7 @@ import android.media.AudioPlaybackConfiguration;
 import android.media.MediaRouter;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 
 import android.app.Notification;
@@ -26,7 +27,6 @@ import android.media.session.PlaybackState;
 
 import android.os.PowerManager;
 import android.util.Log;
-
 import androidx.core.app.NotificationCompat;
 
 import java.util.List;
@@ -45,14 +45,22 @@ public class ServiceMediaSession extends Service {
 
     private final AudioManager.AudioPlaybackCallback audioPlaybackCallback =
             new AudioManager.AudioPlaybackCallback() {
+                private final Handler handler = new Handler();
+
                 @Override
                 public void onPlaybackConfigChanged(List<AudioPlaybackConfiguration> configs) {
                     super.onPlaybackConfigChanged(configs);
                     if (configs.isEmpty()) {
+                        Log.d(TAG, "onPlaybackConfigChanged empty");
                         return;
                     }
                     Log.d(TAG, "onPlaybackConfigChanged: " + configs.get(0).getAudioAttributes().toString());
-                    mediaSessionToTop();
+                    Runnable task = () -> {
+                        Log.d(TAG, "session to top");
+                        mediaSessionToTop();
+                    };
+                    handler.removeCallbacksAndMessages(null);
+                    handler.postDelayed(task, 100);
                 }
             };
 
@@ -71,7 +79,6 @@ public class ServiceMediaSession extends Service {
             Log.d(TAG, "onRouteVolumeChanged: " + current_volume);
         }
     };
-
 
     @Override
     public void onTaskRemoved(Intent intent) {
