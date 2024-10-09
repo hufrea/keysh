@@ -9,9 +9,9 @@ android {
     defaultConfig {
         applicationId 'io.github.hufrea.keysh'
         minSdk 26
-        targetSdk 33
-        versionCode 6
-        versionName "0.1.5"
+        targetSdk 34
+        versionCode 7
+        versionName "0.1.6"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }

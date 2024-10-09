@@ -6,7 +6,10 @@ import android.content.BroadcastReceiver;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 
+import android.content.res.AssetFileDescriptor;
+import android.media.AudioAttributes;
 import android.media.AudioPlaybackConfiguration;
+import android.media.MediaPlayer;
 import android.media.MediaRouter;
 import android.os.Build;
 import android.os.Bundle;
@@ -29,9 +32,8 @@ import android.os.PowerManager;
 import android.util.Log;
 import androidx.core.app.NotificationCompat;
 
+import java.io.IOException;
 import java.util.List;
-
-import io.github.hufrea.keysh.R;
 
 
 public class ServiceMediaSession extends Service {
@@ -83,6 +85,30 @@ public class ServiceMediaSession extends Service {
     @Override
     public void onTaskRemoved(Intent intent) {
         Log.d(TAG, "onTaskRemoved");
+    }
+
+
+    private void playNope() {
+        AudioAttributes audioAttributes = new AudioAttributes.Builder()
+                .setFlags(AudioAttributes.FLAG_AUDIBILITY_ENFORCED)
+                .setUsage(AudioAttributes.USAGE_MEDIA)
+                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                .build();
+        MediaPlayer mediaPlayer = new MediaPlayer();
+        mediaPlayer.setAudioAttributes(audioAttributes);
+
+        try {
+            AssetFileDescriptor descriptor = getAssets().openFd("nope.wav");
+            mediaPlayer.setDataSource(descriptor.getFileDescriptor(), descriptor.getStartOffset(), descriptor.getLength());
+            descriptor.close();
+
+            mediaPlayer.prepare();
+        } catch (IOException e) {
+            Log.e(TAG, e.toString());
+        }
+        mediaPlayer.start();
+        mediaPlayer.stop();
+        mediaPlayer.release();
     }
 
 
@@ -169,6 +195,10 @@ public class ServiceMediaSession extends Service {
                     mediaRouter.addCallback(MediaRouter.CALLBACK_FLAG_UNFILTERED_EVENTS,
                             mCallback, MediaRouter.CALLBACK_FLAG_UNFILTERED_EVENTS);
                     am.registerAudioPlaybackCallback(audioPlaybackCallback, null);
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                        playNope();
+                    }
                 } else if (action.equals(Intent.ACTION_SCREEN_ON)) {
                     mediaSession.setActive(false);
 
