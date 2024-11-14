@@ -7,6 +7,7 @@
 
     <string name="settings_textsize">Text size</string>
     <string name="settings_path">Script path</string>
+    <string name="settings_autostart">Autostart</string>
 
     <!-- Strings used for fragments for navigation -->
     <string name="code_fragment_label">Code</string>

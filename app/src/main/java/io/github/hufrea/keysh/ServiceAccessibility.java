@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -81,8 +82,12 @@ public class ServiceAccessibility extends AccessibilityService {
         IntentFilter filter = new IntentFilter();
         filter.addAction(ACTION_RESTART);
         filter.addAction(ACTION_STOP);
-        registerReceiver(receiver, filter);
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(receiver, filter, RECEIVER_EXPORTED);
+        } else {
+            registerReceiver(receiver, filter);
+        }
         startService(new Intent(this, ServiceMediaSession.class));
     }
 }

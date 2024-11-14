@@ -1,7 +1,10 @@
 package io.github.hufrea.keysh;
 
 import android.Manifest;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -13,6 +16,7 @@ import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
+import androidx.preference.PreferenceManager;
 
 import io.github.hufrea.keysh.R;
 import io.github.hufrea.keysh.databinding.ActivityMainBinding;
@@ -22,6 +26,16 @@ public class ActivityMain extends AppCompatActivity {
 
     private AppBarConfiguration appBarConfiguration;
     public HandlerButton buttonHandler = null;
+
+    static public class BootReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
+            if (sp.getBoolean("autostart", false)) {
+                context.startService(new Intent(context, ServiceMediaSession.class));
+            }
+        }
+    }
 
     public void restartBH() {
         this.buttonHandler.deinit();
