@@ -116,10 +116,6 @@ public class RunnerLoop {
             case "stop_media":
                 context.stopService(new Intent(context, ServiceMediaSession.class));
                 break;
-
-            case "stop_access":
-                Intent intent = new Intent(context.getPackageName() + ".STOP");
-                context.sendBroadcast(intent);
         }
     }
 

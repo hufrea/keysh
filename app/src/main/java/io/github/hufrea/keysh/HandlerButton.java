@@ -18,7 +18,6 @@ public class HandlerButton {
     private static final String RELEASE_UP = "key:3\n";
     private static final String PRESS_DOWN = "key:4\n";
     private static final String RELEASE_DOWN = "key:5\n";
-    private static final String VERSION = "1";
 
     private long press_time = 0;
     private int direction = 0;
@@ -41,11 +40,19 @@ public class HandlerButton {
         ProcessBuilder builder = new ProcessBuilder();
         builder.command("sh", path);
         builder.directory(context.getFilesDir());
-        builder.environment().put("VERSION", VERSION);
+        try {
+            int version = context.getPackageManager()
+                    .getPackageInfo(context.getPackageName(), 0).versionCode;
+            builder.environment().put("VERSION", String.valueOf(version));
+        } catch (Exception e) {
+            Log.e(TAG, e.toString());
+        }
+        builder.environment().put("PACKAGE_NAME", context.getPackageName());
         builder.environment().put("PRESS_UP", PRESS_UP.substring(0, 5));
         builder.environment().put("RELEASE_UP", RELEASE_UP.substring(0, 5));
         builder.environment().put("PRESS_DOWN", PRESS_DOWN.substring(0, 5));
         builder.environment().put("RELEASE_DOWN", RELEASE_DOWN.substring(0, 5));
+        builder.environment().put("VAR", var);
 
         return builder.start();
     }
@@ -118,6 +125,16 @@ public class HandlerButton {
         }
         this.press_time = 0;
         this.direction = 0;
+    }
+
+    public void writeRAW(String string) {
+        try {
+            this.stdin.write(string.getBytes(StandardCharsets.UTF_8));
+            this.stdin.flush();
+        } catch (IOException e) {
+            Log.e(TAG, "writeRAW IO: " + e);
+            onIOError();
+        }
     }
 
     public void deinit() {

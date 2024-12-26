@@ -11,19 +11,33 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.accessibility.AccessibilityEvent;
 
+
 public class ServiceAccessibility extends AccessibilityService {
-    private HandlerButton buttonHandler;
+    private static final String TAG = ServiceAccessibility.class.getSimpleName();
+
+    private HandlerButton buttonHandler = null;
     private BroadcastReceiver receiver;
     private boolean stopped = false;
+    private boolean send_app = false;
+    private String foreground_app = null;
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
+        String pm = event.getPackageName().toString();
+        if (pm.equals(foreground_app)) {
+            return;
+        }
+        Log.d(TAG, "pm: " + pm);
+        foreground_app = pm;
+        if (buttonHandler != null && send_app) {
+            buttonHandler.writeRAW("app:" + pm + "\n");
+        }
     }
 
     @Override
     public boolean onKeyEvent(KeyEvent event) {
-        Log.d("ServiceAccessibility", "onKeyEvent");
-        if (stopped) {
+        Log.d(TAG, "onKeyEvent: " + event.getKeyCode());
+        if (stopped || buttonHandler == null) {
             return super.onKeyEvent(event);
         }
         int dir;
@@ -53,18 +67,27 @@ public class ServiceAccessibility extends AccessibilityService {
     @Override
     public void onServiceConnected() {
         String ACTION_RESTART = getPackageName() + ".RESTART";
-        String ACTION_STOP = getPackageName() + ".STOP";
+        String ACTION_PAUSE = getPackageName() + ".PAUSE";
+        String ACTION_RESUME = getPackageName() + ".RESUME";
+        String ACTION_RECV_APP_SWITCH = getPackageName() + ".RECV_APP_SWITCH";
 
-        Log.d("ServiceAccessibility", "onServiceConnected");
-        this.buttonHandler = new HandlerButton(this, "AccessibilityService");
+        Log.d(TAG, "onServiceConnected");
+
         this.receiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                if (!stopped) {
-                    buttonHandler.deinit();
+                Log.d(TAG, "broadcast: " + intent.getAction());
+
+                if (intent.getAction().equals(ACTION_RECV_APP_SWITCH)) {
+                    send_app = true;
+                    return;
                 }
-                if (intent.getAction().equals(ACTION_STOP)) {
+                else if (intent.getAction().equals(ACTION_PAUSE)) {
                     stopped = true;
+                    return;
+                }
+                else if (intent.getAction().equals(ACTION_RESUME)) {
+                    stopped = false;
                     return;
                 }
                 String data = "AccessibilityService";
@@ -75,13 +98,17 @@ public class ServiceAccessibility extends AccessibilityService {
                         data = object.toString();
                     }
                 }
+                buttonHandler.deinit();
                 buttonHandler = new HandlerButton(context, data);
                 stopped = false;
+                send_app = false;
             }
         };
         IntentFilter filter = new IntentFilter();
         filter.addAction(ACTION_RESTART);
-        filter.addAction(ACTION_STOP);
+        filter.addAction(ACTION_PAUSE);
+        filter.addAction(ACTION_RESUME);
+        filter.addAction(ACTION_RECV_APP_SWITCH);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(receiver, filter, RECEIVER_EXPORTED);
@@ -89,5 +116,7 @@ public class ServiceAccessibility extends AccessibilityService {
             registerReceiver(receiver, filter);
         }
         startService(new Intent(this, ServiceMediaSession.class));
+
+        this.buttonHandler = new HandlerButton(this, "AccessibilityService");
     }
 }
