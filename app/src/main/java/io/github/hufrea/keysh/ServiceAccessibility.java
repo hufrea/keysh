@@ -19,15 +19,26 @@ public class ServiceAccessibility extends AccessibilityService {
     private BroadcastReceiver receiver;
     private boolean stopped = false;
     private boolean send_app = false;
-    private String foreground_app = null;
+    private CharSequence foreground_app = null;
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
-        String pm = event.getPackageName().toString();
+        CharSequence pm = event.getPackageName();
+        CharSequence cls  = event.getClassName();
+
+        if (pm == null || cls == null) {
+            return;
+        }
+        // ignore system UI and keyboard
+        if (event.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
+                && (pm.equals("com.android.systemui")
+                    || cls.equals("android.inputmethodservice.SoftInputWindow"))) {
+            return;
+        }
         if (pm.equals(foreground_app)) {
             return;
         }
-        Log.d(TAG, "pm: " + pm);
+        Log.d(TAG, "pm: " + pm + ", type: " + event.getEventType() + ", class: " + cls);
         foreground_app = pm;
         if (buttonHandler != null && send_app) {
             buttonHandler.writeRAW("app:" + pm + "\n");
