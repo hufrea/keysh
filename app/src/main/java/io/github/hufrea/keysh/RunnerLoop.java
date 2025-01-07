@@ -13,6 +13,8 @@ import io.github.hufrea.keysh.actions.ActionTorch;
 import io.github.hufrea.keysh.actions.ActionVibrate;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Pattern;
 
 public class RunnerLoop {
@@ -41,17 +43,61 @@ public class RunnerLoop {
         }
     }
 
-    private void runner(String line) {
-        String delimiter = " ";
+    public static String[] decodeOld(String line, String d) {
         if (line.startsWith(":")) {
             String[] split = line.split(":", 3);
             if (split.length < 3) {
-                return;
+                return null;
             }
-            delimiter = Pattern.quote(split[1]);
+            d = Pattern.quote(split[1]);
             line = split[2];
         }
-        String[] args = line.split(delimiter);
+        return line.split(d);
+    }
+
+    static int getLen(String data, int[] offset) {
+        if ((offset[0] = data.indexOf(':')) < 0) {
+            return -1;
+        }
+        try {
+            int len = Integer.parseInt(data.substring(0, offset[0]));
+            offset[0]++;
+            return len;
+        } catch (NumberFormatException e) {
+            return -1;
+        }
+    }
+
+    public static String[] parseList(String line) {
+        List<String> result = new ArrayList<>();
+        int[] off = new int[1];
+
+        int len = getLen(line, off);
+        if (len < 0 || len + off[0] > line.length()) {
+            return null;
+        }
+        line = line.substring(off[0], off[0] + len);
+
+        while (!line.isEmpty()) {
+            len = getLen(line, off);
+            if (len < 0 || len + off[0] > line.length()) {
+                return null;
+            }
+            result.add(line.substring(off[0], off[0] + len));
+            line = line.substring(off[0] + len);
+        }
+        String[] array = new String[result.size()];
+        result.toArray(array);
+        return array;
+    }
+
+    private void runner(String line) {
+        String[] args = parseList(line);
+        if (args == null) {
+            args = decodeOld(line, " ");
+            if (args == null || args.length == 0)
+                return;
+        }
         switch (args[0]) {
             case "media":
                 ActionAudio.mediaEvent(am, args);
@@ -101,7 +147,7 @@ public class RunnerLoop {
                     break;
                 }
                 Intent pintent = new Intent(context, ActivityPermission.class);
-                pintent.putExtra("permission", args[1]);
+                pintent.putExtra(context.getPackageName() + ".PERMISSION", args[1]);
                 try {
                     context.startActivity(pintent);
                 } catch (Exception e) {

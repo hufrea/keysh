@@ -14,10 +14,10 @@ import java.io.*;
 public class HandlerButton {
     private static final String TAG = HandlerButton.class.getSimpleName();
 
-    private static final String PRESS_UP = "key:2\n";
-    private static final String RELEASE_UP = "key:3\n";
-    private static final String PRESS_DOWN = "key:4\n";
-    private static final String RELEASE_DOWN = "key:5\n";
+    private static final String PRESS_UP = "key:2";
+    private static final String RELEASE_UP = "key:3";
+    private static final String PRESS_DOWN = "key:4";
+    private static final String RELEASE_DOWN = "key:5";
 
     private long press_time = 0;
     private int direction = 0;
@@ -48,10 +48,10 @@ public class HandlerButton {
             Log.e(TAG, e.toString());
         }
         builder.environment().put("PACKAGE_NAME", context.getPackageName());
-        builder.environment().put("PRESS_UP", PRESS_UP.substring(0, 5));
-        builder.environment().put("RELEASE_UP", RELEASE_UP.substring(0, 5));
-        builder.environment().put("PRESS_DOWN", PRESS_DOWN.substring(0, 5));
-        builder.environment().put("RELEASE_DOWN", RELEASE_DOWN.substring(0, 5));
+        builder.environment().put("PRESS_UP", PRESS_UP);
+        builder.environment().put("RELEASE_UP", RELEASE_UP);
+        builder.environment().put("PRESS_DOWN", PRESS_DOWN);
+        builder.environment().put("RELEASE_DOWN", RELEASE_DOWN);
         builder.environment().put("VAR", var);
 
         return builder.start();
@@ -100,7 +100,7 @@ public class HandlerButton {
         this.direction = direction;
         this.press_time = System.currentTimeMillis();
 
-        String data = direction == 1 ? PRESS_UP : PRESS_DOWN;
+        String data = (direction == 1 ? PRESS_UP : PRESS_DOWN) + "\n";
         try {
             this.stdin.write(data.getBytes(StandardCharsets.UTF_8));
             this.stdin.flush();
@@ -114,7 +114,7 @@ public class HandlerButton {
         long t = System.currentTimeMillis();
         Log.d(TAG, "press duration: " + (t - this.press_time));
 
-        String data = direction == 1 ? RELEASE_UP : RELEASE_DOWN;
+        String data = (direction == 1 ? RELEASE_UP : RELEASE_DOWN) + "\n";
         try {
             this.stdin.write(data.getBytes(StandardCharsets.UTF_8));
             this.stdin.flush();

@@ -2,49 +2,45 @@ set -eu
 
 TO=0.300
 DUR_S=30
+WL_MAX=5000
 
 # UP 300ms = run command in Termux
 
 
 on_up() {
     read -t $TO key && {
-        volume music up
+        cmd volume music up
         return
     }
-    vibrate $DUR_S
+    cmd vibrate $DUR_S
     termux-run bash -c 'top -n 5'
 }
 
 
 loop() {
-    permission TERMUX_RUN_COMMAND
+    cmd permission TERMUX_RUN_COMMAND
     
     while read key; do
-        wakelock acquire 5000
+        cmd wakelock acquire $WL_MAX
 
         case "$key" in
             "$PRESS_UP" )
                 on_up
             ;;
             "$PRESS_DOWN" )
-                volume music down
+                cmd volume music down
             ;;
         esac
-        wakelock release
+        cmd wakelock release
     done
 }
 
 
 termux-run() {
     BIN="/data/data/com.termux/files/usr/bin/${1}"
-    ARGS=":+-+:${2}"
-    shift; shift
-
-    for arg in "$@"; do
-        ARGS="${ARGS}+-+${arg}"
-    done
-
-    intent -a 'com.termux.RUN_COMMAND' \
+    shift; encode_list "$@"; ARGS="$ENCODED"
+    
+    cmd intent -a 'com.termux.RUN_COMMAND' \
         -t 'service' \
         -p 'com.termux/com.termux.app.RunCommandService' \
         -e "com.termux.RUN_COMMAND_PATH:${BIN}" \
@@ -52,29 +48,16 @@ termux-run() {
         -e "com.termux.RUN_COMMAND_ARGUMENTS:{${ARGS}}"
 }
 
-###
 
-DELIM="|+|"
-
-vibrate() {
-    echo "vibrate $*";
-}
-wakelock() {
-    echo "wakelock $*";
-}
-volume() {
-    echo "volume $*";
-}
-intent() {
-    ARGS=""
-    for arg in "$@"; do
-        ARGS="${ARGS}${DELIM}${arg}"
+encode_list() {
+    ENCODED=""; for arg in "$@"; do
+        ENCODED="${ENCODED}${#arg}:${arg}"
     done
-    echo ":${DELIM}:intent${ARGS}";
+    ENCODED="${#ENCODED}:$ENCODED"
 }
-permission() {
-    echo "permission $*";
+cmd() {
+    encode_list "$@"; 
+    echo "$ENCODED"
 }
-
 
 loop

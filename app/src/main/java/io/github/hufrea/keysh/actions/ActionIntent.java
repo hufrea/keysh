@@ -9,6 +9,8 @@ import android.util.Log;
 import java.util.Arrays;
 import java.util.regex.Pattern;
 
+import io.github.hufrea.keysh.RunnerLoop;
+
 public class ActionIntent {
     static private Object parseValue(String str) {
         if (str.isEmpty()) {
@@ -49,17 +51,11 @@ public class ActionIntent {
     static private void putIntentExtraArray(String name, String str, Intent intent) {
         str = str.substring(1, str.length() - 1);
 
-        String delimiter = ",";
-        if (str.startsWith(":")) {
-            String[] split = str.split(":", 3);
-            if (split.length < 3) {
-                return;
-            }
-            delimiter = Pattern.quote(split[1]);
-            str = split[2];
+        String[] array = RunnerLoop.parseList(str);
+        if (array == null) {
+            array = RunnerLoop.decodeOld(str, ",");
         }
-        String[] array = str.split(delimiter);
-        if (array.length == 0) {
+        if (array == null || array.length == 0) {
             return;
         }
         Object[] objArray = new Object[array.length];

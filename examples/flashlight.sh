@@ -2,25 +2,26 @@ set -eu
 
 TO=0.300
 DUR_S=30
-OFF_TIMEOUT=300
+TORCH_OFF_TO=300
+WL_MAX=310000
 
 # Down 300ms = torch on
 #           -> Up/Down   = torch Off
 
 
 on_flashlight() {
-    vibrate $DUR_S
-    torch on
-    while read -t $OFF_TIMEOUT key; do
+    cmd vibrate $DUR_S
+    cmd torch on
+    while read -t $TORCH_OFF_TO key; do
         [ "$key" = "$RELEASE_DOWN" ] || break;
     done
-    torch off
+    cmd torch off
 }
 
 
 on_down() {
     read -t $TO key && {
-        volume music down
+        cmd volume music down
         return
     }
     on_flashlight
@@ -29,37 +30,30 @@ on_down() {
 
 loop() {
     while read key; do
-        wakelock acquire 310000
+        cmd wakelock acquire $WL_MAX
         
         case "$key" in
             "$PRESS_UP" )
-                volume music up
+                cmd volume music up
             ;;
             "$PRESS_DOWN" )
                 on_down
             ;;
         esac
-        wakelock release
+        cmd wakelock release
     done
 }
 
-###
 
-vibrate() {
-    # <duration_ms>
-    echo "vibrate $*";
+encode_list() {
+    ENCODED=""; for arg in "$@"; do
+        ENCODED="${ENCODED}${#arg}:${arg}"
+    done
+    ENCODED="${#ENCODED}:$ENCODED"
 }
-wakelock() {
-    # acquire|release [timeout_ms]
-    echo "wakelock $*";
-}
-volume() {
-    # music|notification|ring|call up|down|<level>
-    echo "volume $*";
-}
-torch() {
-    # on|off
-    echo "torch $*";
+cmd() {
+    encode_list "$@"; 
+    echo "$ENCODED"
 }
 
 loop

@@ -1,6 +1,11 @@
 set -eu
 
 STO=0.250
+DUR_S=25
+DUR_L=50
+
+WL_MAX=3000
+IDLE_TO=1.5
 
 # Up 250ms -> Up        = next track
 # Up 250ms -> Down      = prev track
@@ -11,12 +16,6 @@ STO=0.250
 #                      -> Down      = forward
 #                      -> Dw 250ms  = break
 
-DUR_S=25
-DUR_L=50
-
-WL_MAX=3000
-IDLE_TO=1.5
-
 
 on_forward() {
     while read key; do
@@ -25,35 +24,35 @@ on_forward() {
             read -t $STO key || {
                 break
             }
-            media forward
+            cmd media forward
         ;;
         "$PRESS_UP" )
-            media rewind
+            cmd media rewind
         ;;
         esac
     done
-    vibrate $DUR_L
+    cmd vibrate $DUR_L
 }
 
 
 on_up() {
     read -t $STO key && {
-        volume music up
+        cmd volume music up
         return
     }
-    vibrate $DUR_S
+    cmd vibrate $DUR_S
     read key
     
     read -t $IDLE_TO key || {
-        vibrate $DUR_L
+        cmd vibrate $DUR_L
         return 
     }
     case "$key" in
         "$PRESS_UP" )
-            media next
+            cmd media next
         ;;
         "$PRESS_DOWN" )
-            media previous
+            cmd media previous
         ;;
     esac
 }
@@ -61,19 +60,19 @@ on_up() {
 
 on_down() {
     read -t $STO key && {
-        volume music down
+        cmd volume music down
         return
     }
-    vibrate $DUR_S
+    cmd vibrate $DUR_S
     read key
 
     read -t $IDLE_TO key || {
-        vibrate $DUR_L
+        cmd vibrate $DUR_L
         return 
     }
     case "$key" in
         "$PRESS_DOWN" )
-            media play_pause
+            cmd media play_pause
         ;;
         "$PRESS_UP" )
             on_forward
@@ -98,34 +97,26 @@ on_key() {
 
 loop() {
     while read key; do
-        wakelock acquire $WL_MAX
+        cmd wakelock acquire $WL_MAX
         on_key "$key"
 
         while read -t $IDLE_TO key; do # keep wakelock
             on_key "$key"
         done
-
-        wakelock release
+        cmd wakelock release
     done
 }
 
-#####
 
-vibrate() {
-    # <duration_ms>
-    echo "vibrate $*";
+encode_list() {
+    ENCODED=""; for arg in "$@"; do
+        ENCODED="${ENCODED}${#arg}:${arg}"
+    done
+    ENCODED="${#ENCODED}:$ENCODED"
 }
-wakelock() {
-    # acquire|release [timeout_ms]
-    echo "wakelock $*";
-}
-media() {
-    # play_pause|next|previous|rewind|forward|stop
-    echo "media $*";
-}
-volume() {
-    # music|notification|ring|call up|down|<level>
-    echo "volume $*";
+cmd() {
+    encode_list "$@"; 
+    echo "$ENCODED"
 }
 
 loop

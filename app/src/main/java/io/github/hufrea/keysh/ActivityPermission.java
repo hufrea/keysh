@@ -93,7 +93,7 @@ public class ActivityPermission extends AppCompatActivity {
         super.onCreate(saved);
 
         Bundle bundle = getIntent().getExtras();
-        String data = bundle == null ? null : bundle.getString("permission");
+        String data = bundle == null ? null : bundle.getString(getPackageName() + ".PERMISSION");
         if (data != null) {
             permissionFromName(data);
         }
