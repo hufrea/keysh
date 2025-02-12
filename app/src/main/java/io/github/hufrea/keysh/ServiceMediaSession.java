@@ -44,6 +44,8 @@ public class ServiceMediaSession extends Service {
     private HandlerButton buttonHandler = null;
     private PowerManager.WakeLock wl;
     private AudioManager am;
+    private int lastUsage = AudioAttributes.USAGE_UNKNOWN;
+    private boolean screenIsOff = false;
 
     private final AudioManager.AudioPlaybackCallback audioPlaybackCallback =
             new AudioManager.AudioPlaybackCallback() {
@@ -57,6 +59,10 @@ public class ServiceMediaSession extends Service {
                         return;
                     }
                     Log.d(TAG, "onPlaybackConfigChanged: " + configs.get(0).getAudioAttributes().toString());
+                    lastUsage = configs.get(0).getAudioAttributes().getUsage();
+                    if (!screenIsOff) {
+                        return;
+                    }
                     Runnable task = () -> {
                         Log.d(TAG, "session to top");
                         mediaSessionToTop();
@@ -160,7 +166,6 @@ public class ServiceMediaSession extends Service {
 
                         if (direction != 0) {
                             wl.acquire(60 * 1000L);
-                            Log.d(TAG, "wakelock acquire");
                             buttonHandler.onButtonPress(direction);
                         } else {
                             buttonHandler.onButtonRelease();
@@ -189,21 +194,27 @@ public class ServiceMediaSession extends Service {
                     Log.d(TAG, action);
                 }
                 if (action.equals(Intent.ACTION_SCREEN_OFF)) {
+                    screenIsOff = true;
                     mediaSession.setActive(true);
                     mediaSessionToTop();
 
                     mediaRouter.addCallback(MediaRouter.CALLBACK_FLAG_UNFILTERED_EVENTS,
                             mCallback, MediaRouter.CALLBACK_FLAG_UNFILTERED_EVENTS);
-                    am.registerAudioPlaybackCallback(audioPlaybackCallback, null);
 
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                        playNope();
+                        if (lastUsage != AudioAttributes.USAGE_MEDIA)
+                            playNope();
+                    } else {
+                        am.registerAudioPlaybackCallback(audioPlaybackCallback, null);
                     }
                 } else if (action.equals(Intent.ACTION_SCREEN_ON)) {
+                    screenIsOff = false;
                     mediaSession.setActive(false);
 
                     mediaRouter.removeCallback(mCallback);
-                    am.unregisterAudioPlaybackCallback(audioPlaybackCallback);
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                        am.unregisterAudioPlaybackCallback(audioPlaybackCallback);
+                    }
                 }
             }
         };
@@ -220,6 +231,8 @@ public class ServiceMediaSession extends Service {
 
         PowerManager pm = (PowerManager) this.getSystemService(Context.POWER_SERVICE);
         this.wl = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, TAG + ":lock");
+
+        am.registerAudioPlaybackCallback(audioPlaybackCallback, null);
 
         initMediaSession();
         initReceiver();
